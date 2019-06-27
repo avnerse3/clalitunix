@@ -1,5 +1,5 @@
 - name: Add SAPADM group and USER
-  hosts: sap
+  hosts: all
 #  connection: local
   become: yes
 
