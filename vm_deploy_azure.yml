@@ -1,0 +1,79 @@
+- name: Create Azure VM
+  hosts: localhost
+  connection: local
+  
+  tasks:
+
+    - name: Create resource group 
+      azure_rm_resourcegroup: 
+        name: excercise
+        location: westeurope
+
+    - name: Create virtual network
+      azure_rm_virtualnetwork:
+        resource_group: excercise
+        name: Vnet1
+        address_prefixes: "10.0.0.0/16"
+
+    - name: Add subnet
+      azure_rm_subnet:
+        resource_group: excercise
+        name: Subnet1
+        address_prefix: "10.0.10.0/24"
+        virtual_network: Vnet1
+
+    - name: Create public IP address
+      azure_rm_publicipaddress:
+        resource_group: excercise
+        allocation_method: Static
+        name: PublicIP1
+
+    - name: Create Network Security Group that allows SSH
+      azure_rm_securitygroup:
+        resource_group: excercise
+        name: NetworkSecurityGroup1
+        rules:
+        - name: SSH
+          protocol: Tcp
+          destination_port_range: 22
+          access: Allow
+          priority: 1001
+          direction: Inbound
+
+    - name: Create virtual network interface card
+      azure_rm_networkinterface:
+        resource_group: excercise
+        name: NIC1
+        virtual_network: Vnet1
+        subnet: Subnet1
+        public_ip_name: PublicIP1
+        security_group: NetworkSecurityGroup1
+
+    - name: Create VM
+      azure_rm_virtualmachine:
+        resource_group: excercise
+        name: SAP1
+        vm_size: Standard_DS1_v2
+        admin_username: avners
+        ssh_password_enabled: false
+        ssh_public_keys:
+          - path: /home/avners/.ssh/authorized_keys
+            key_data: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDNhi4AZ80yluTlUMkjaCBLqTjc7CVrxRcziH3Kn/dDalI2Pa+JlcApbqNkujQlAk8XqPxicFhcfb/aSbQV1qyEyMaiOFopLLaRYVbExp5iwiAG55cWsfrpz9sBPAC9srlCX/AA+dcM3ooSkqVYCEcCXoGNubbrF0G5JMq9RvY4FllDQYGw2k5V0LsBIt2dGGT++feZBDf7AzbqyYnhA+zXG9qSKKEA+eRs3TpUzfeRCOAlIfhVwivoHOrdNcmir+fEScuBi3adOx+EcAWW/OzNKZcNVH4X7PxpB9t190oHk6rXWDmOuquJNez+c8q7EcKwpHn7Lek9RhTB8ND1vgkZ 
+    avners@DESKTOP-9DM3NGN"
+        network_interfaces: NIC1
+        image:
+          offer: CentOS
+          publisher: OpenLogic
+          sku: '7.5'
+          version: latest
+        managed_disk_type: Premium_LRS
+        data_disks:
+          - lun: 0
+            disk_size_gb: 5
+            managed_disk_type: Premium_LRS
+          - lun: 1
+            disk_size_gb: 10
+            managed_disk_type: Premium_LRS
+          - lun: 2
+            disk_size_gb: 15
+            managed_disk_type: Premium_LRS

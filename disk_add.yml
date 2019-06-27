@@ -1,0 +1,44 @@
+- name: Add disk to SAP VM
+  hosts: sap
+#  connection: local
+  become: yes
+  
+  tasks: 
+ 
+  - name: partition new disk pvcreate
+    shell: 'pvcreate /dev/sdc'
+    args:
+      executable: /bin/bash
+    register: pvcout
+  - local_action: "copy content='{{ pvcout.stdout }}' dest=output.txt"
+
+#  - name: Saving data to local file
+#    copy:
+#      content:  "{{  pvc_out.stdout_lines  }}"
+#      dest: /home/pvc_output.log
+#     delegate_to: sap
+
+  - name: partition new disk vgcreate
+    shell: 'vgcreate dg3 /dev/sdc'
+    args:
+       executable: /bin/bash
+
+  - name: partition new disk lvcreate
+    shell: 'lvcreate -n vol01 dg3 -l 100%FREE'
+    args:
+      executable: /bin/bash
+
+  - name: Makes file system on block device
+    filesystem:
+      fstype: ext4
+      dev: /dev/mapper/dg3-vol01
+
+  - name: new dir to mount
+    file: path=/sapusr state=directory
+
+  - name: mount the dir
+    mount:
+      path: /sapusr
+      src: /dev/mapper/dg3-vol01
+      fstype: ext4
+      state: mounted

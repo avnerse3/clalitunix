@@ -1,0 +1,46 @@
+- name: Add disk to SAP VM
+  hosts: sap
+#  connection: local
+  become: yes
+
+  tasks:
+
+  - name: partition new disk pvcreate
+    shell: 'pvcreate /dev/sdd'
+    args:
+      executable: /bin/bash
+    register: out_pvc
+
+  - debug:
+      var: out_pvc
+      verbosity: 2
+
+
+  - name: partition new disk vgcreate
+    shell: 'vgcreate dg2 /dev/sdd'
+    args:
+       executable: /bin/bash
+    register: out_vgc
+#    debug: out_vgc
+
+  - name: partition new disk lvcreate
+    shell: 'lvcreate -n vol01 dg2 -l 100%FREE'
+    args:
+      executable: /bin/bash
+    register: out_lvs
+#    debug: out_lvs
+
+  - name: Makes file system on block device
+    filesystem:
+      fstype: ext4
+      dev: /dev/mapper/dg2-vol01
+
+  - name: new dir to mount
+    file: path=/sap state=directory
+
+  - name: mount the dir
+    mount:
+      path: /sap
+      src: /dev/mapper/dg2-vol01
+      fstype: ext4
+      state: mounted
