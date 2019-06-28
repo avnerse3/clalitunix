@@ -1,3 +1,4 @@
+  
 - name: Add SAPADM group and USER
   hosts: all
 #  connection: local
