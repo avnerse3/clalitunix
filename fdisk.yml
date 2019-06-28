@@ -1,19 +1,31 @@
 ---
-- name: fdisk output 
+- name: collect remote disk information 
   hosts: sap_frontend
   gather_facts: false
   become: yes
 
   tasks:
 
-    - name: 5. collect fdisk -l output
+    - name: 1. collect fdisk -l output
       shell: 'fdisk -l'
       args:
         executable: /bin/bash
       register: result
     
-    - name: print
+    - name: 1.1 print 'fdisk -l' to screen using stdout_lines; also saves local file (may require local permissions)
       debug:
         var: result.stdout_lines
         verbosity: 0
-    - local_action: "copy content='{{ result.stdout_lines }}' dest=fdisk_results.txt"
+    - local_action: "copy content='{{ result.stdout_lines }}' dest=df_results.txt"
+
+    - name: 2. collect df -lh output
+      shell: 'df -lh'
+      args:
+        executable: /bin/bash
+      register: result
+
+    - name: 2.1 print 'df -lh' to screen using stdout_lines; also saves local file (may require local permissions)
+      debug:
+        var: result.stdout_lines
+        verbosity: 0
+    - local_action: "copy content='{{ result.stdout_lines }}' dest=df_results.txt"

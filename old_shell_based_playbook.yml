@@ -1,6 +1,5 @@
-- name: Add disk to SAP VM
+- name: Add disk to SAP VM - DONT USE - not module based
   hosts: sap
-#  connection: local
   become: yes
   
   tasks: 
