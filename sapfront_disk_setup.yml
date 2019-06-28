@@ -1,0 +1,67 @@
+---
+  - name: setup sap frontend lvm
+    hosts: sap_frontend
+    gather_facts: false
+    become: yes
+
+    tasks:
+
+      - name: 1. Create Volume Groups dg1,dg2,dg3 for sdc,sdd,sde
+        lvg:
+          vg: '{{ item.group }}'
+          pvs: /dev/{{ item.disk }}
+        loop:
+          - { group: 'dg1', disk: 'sdc'}
+          - { group: 'dg2', disk: 'sdd'}
+          - { group: 'dg3', disk: 'sde'}
+
+      - name: 2. Put ext4 fs on Volume Groups
+        filesystem:
+          fstype: ext4
+          dev: /dev/mapper/dg{{ item }}-vol--001
+        with_sequence: count=3 start=1
+
+      - name: 3. Create directories
+        file:
+          path: '{{ item }}'
+          state: directory
+          mode: '0755'
+        with_items:
+          - /sap
+          - /sapusr
+          - /saplib
+
+      - name: 4. Mount the Directories
+        mount:
+          path: '{{ item.dir }}'
+          src: /dev/mapper/{{ item.group }}-vol--001
+          fstype: ext4
+          state: mounted
+        loop:
+          - { group: 'dg1', dir: '/sap'}
+          - { group: 'dg2', dir: '/sapusr'}
+          - { group: 'dg3', dir: '/saplib'}
+
+      - name: 5. collect fdisk -l output
+        shell: 'fdisk -l'
+        args:
+          executable: /bin/bash
+        register: result
+
+      - name: 6. print 'fdisk -l' to screen using stdout_lines; also saves local file (may require local permissions)
+        debug:
+          var: result.stdout_lines
+          verbosity: 0
+      - local_action: "copy content='{{ result.stdout_lines }}' dest=fdisk_results.txt"
+
+      - name: 7. collect df -lh output
+        shell: 'df -lh'
+        args:
+          executable: /bin/bash
+        register: result
+
+      - name: 8. print 'df -lh' to screen using stdout_lines; also saves local file (may require local permissions)
+        debug:
+          var: result.stdout_lines
+          verbosity: 0
+      - local_action: "copy content='{{ result.stdout_lines }}' dest=df_results.txt"

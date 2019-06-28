@@ -1,0 +1,19 @@
+---
+- name: fdisk output 
+  hosts: sap_frontend
+  gather_facts: false
+  become: yes
+
+  tasks:
+
+    - name: 5. collect fdisk -l output
+      shell: 'fdisk -l'
+      args:
+        executable: /bin/bash
+      register: result
+    
+    - name: print
+      debug:
+        var: result.stdout_lines
+        verbosity: 0
+    - local_action: "copy content='{{ result.stdout_lines }}' dest=fdisk_results.txt"

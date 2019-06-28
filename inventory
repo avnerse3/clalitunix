@@ -1,2 +1,2 @@
-[sap]
-sap1 ansible_user=avner ansible_host=52.137.15.186
+[sap_frontend]
+sap_frontend_1 ansible_user=avners ansible_host=104.46.57.173
